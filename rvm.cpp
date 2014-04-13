@@ -3,11 +3,20 @@
 
 #include "rvm.h"
 
+#include <fcntl.h>
 #include <string.h>
+#include <sys/stat.h>
+
+char *backing_dir;
 
 /* Initialize the library with the specified directory as backing store */
 rvm_t rvm_init(const char *directory) {
-
+	backing_dir = strdup(directory);
+	if(mkdir(backing_dir, 0777)) {
+		fprintf(stderr, "Error: %s\s", strerror(errno));
+		free(backing_dir);
+		exit(1);
+	}
 }
 
 /* Map a segment from disk into memory.
@@ -16,7 +25,12 @@ rvm_t rvm_init(const char *directory) {
  * then extend it until it is long enough. It is an error to try to map the
  * same segment twice. */
 void *rvm_map(rvm_t rvm, const char *segname, int size_to_create) {
-
+	// Create backing store
+	int fname_len = strlen(backing_dir) + strlen(segname) + 2;
+	char *fname = malloc(sizeof(char) * fname_len);
+	strcpy(fname, backing_dir);
+	strcat(strcat(fname, "/"), segname);
+	int fd = creat(fname, 0777);
 }
 
 /* Unmap a segment from memory */
