@@ -4,12 +4,9 @@
 #ifndef __RVM_INTERNAL__
 #define __RVM_INTERNAL__
 
-typedef struct {
-	// TODO
-} rvm_t;
+#include <stdint.h>
 
-typedef struct {
-	// TODO
-} trans_t;
+typedef int32_t rvm_t;
+typedef int32_t trans_t;
 
-#endif
+#endif//__RVM_INTERNAL__
