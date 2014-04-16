@@ -1,6 +1,13 @@
 /* truncate the log; manually inspect to see that the log has shrunk
  * to nothing */
 
+/* !!!!!
+ *
+ * Be sure to run a different test before trying this one
+ *
+ * !!!!!
+ */
+
 #include "rvm.h"
 #include <unistd.h>
 #include <stdio.h>
