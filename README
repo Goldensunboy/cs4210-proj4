@@ -1,0 +1,52 @@
+Nick Johnson
+Andrew Wilder
+
+Recoverable Virtual Memory
+
+In our design, we use per-segment log files to achieve efficient durability
+and transaction semantics. Each segment is stored in two files, the first 
+called "seg.<segment name>" and the second called "log.<segment name>". The
+first file contains the state of the segment (minus changes stored in the
+log) and the second file stores the redo records created by committed
+transactions on that segment. The format of the log files is very simple:
+
+- All numbers are little endian (host byte order) for simplicity
+- A transaction contains a header with a 32-bit count of redo records in 
+  that transaction.
+- A redo record contains a header with a 32-bit offset and a 32-bit data
+  length of that record, followed by the appropriate number of data bytes
+  representing the new state of the relevant region of the segment after
+  the redo record is replayed.
+
+Because aborted transactions are not recorded in the log, it is also trivial
+to replay the log over the segment, because all of the redo records in the
+log are valid.
+
+If we had to make sure that even if the program crashed during our library
+code or OS code writing to the logs, it would be able to recover, we would
+have had to do some things to make sure that partially-written transactions 
+in the log would be ignored and that when replaying the log over the segment
+data we did not only perform writes partway. However, because we were not 
+required to handle those situations, we were able to simplify those structures.
+
+When a segment is loaded into memory, it is copied from the main segment file,
+then the corresponding log file is played over it. This is the reasoning behind
+having multiple log files: loading a segment is a common operation, and if we
+had a single log file, we would have to filter out the redo records that were
+not for the segment being loaded. Having multiple log files means faster 
+replays. In addition, if we were required to support concurrency, then being
+able to lock the log files in a more fine-grained way would be advantageous.
+
+When a transaction is committed, the region of memory marked as modified is
+written to the log as a redo record. We currently simplify the tracking of
+the marked region of memory by only storing the lowest and highest memory
+locations requested to be in the region. This is less precise and less
+space-efficient than a more sophistiated implementation, but still correct,
+since the segment is contiguous and it is safe to commit regions that have
+not been modified.
+
+To perform log truncation, each log is replayed over its respective segment,
+then all of the log files are truncated to zero length. This is slightly
+less efficient than if we had a single log, but we expect segment loads to
+be more frequent than log truncations, so this seems like a reasonable
+tradeoff.
