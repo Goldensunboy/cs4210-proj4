@@ -39,8 +39,9 @@ void proc1()
 
      rvm_commit_trans(trans);
 
-	 printf("Waiting for user-generated SIGINT...\n");
-	 while(1);
+	 printf("Sending SIGINT...\n");
+	 raise(SIGINT);
+	 printf("Uh oh\n");
 }
 
 void proc2() 
